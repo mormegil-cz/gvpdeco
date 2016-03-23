@@ -1,0 +1,92 @@
+Notes about GVP file format
+***************************
+
+BASIC NOTES
+===========
+
+Intel byte-ordering (little-endian)
+All strings are in Unicode (UCS-16), zero-terminated
+
+FILE HEADER STRUCTURE
+=====================
+
+offset	size	description
+---------------------------------------------
+0	4	Magic "GVP "
+4	4	File version? (=64h)
+8	4	File version? (=2)
+12	4	Size [B] of the "File title 1"
+16	4	Offset of the "File title 1"
+20	4	Size [B] of the "File title 2"
+24	4	Offset of the "File title 2"
+28	4	Number of entries in "Variables" table
+32	4	Size [B] of the "Tokens" table
+36	4	Offset of the "Tokens" table
+40	4	Number of entries in "Identifiers" table
+44	4	Relative offset of the "Categories" table from beginning of the "Identifiers" table
+48	4	Offset of the "Identifiers" table
+52	4	Number of voices
+56	4	Number of index entries (=number of all sounds with variations for a single voice)
+60	4	Size [B] of "Sounds" + "Category index" + "Waves" indexes (?)
+64	4	Offset of the "Sounds" index
+68	4	Number of entries in the "Phrases" section
+72	4	Size [B] of the "Phrases" section
+76	4	Offset of the "Phrases" section
+80	4	Number of WAVEs in the "Sound data" section
+84	4	Size [B] of the "Sound data" section
+88	4	Offset of the "Sound data" section
+92	4	Size [B] of the "Voices" table
+96	4	Offset of the "Voices" table
+---------------------------------------------
+The size of File header is 100 byte.
+
+FILE STRUCTURE
+==============
+
+File Header
+	- see above for structure
+File title
+	- Unicode string, zero terminated
+	- pointed to by both [Header+16] and [Header+24]
+"Voices" table
+	- Unicode zero terminated strings, one directly after another
+	- beginning at [Header+92]
+	- [Header+52] entries
+"Tokens" table
+	- entry format:
+		0	4	Token ID?
+		4	?	Unicode zero terminated string - token identifier
+	- beginning at [Header+36]
+	- [Header+32] bytes total size
+"Identifiers" table
+	- entry format:
+		0	4	Sound ID
+		4	?	Unicode zero terminated string - sound identifier
+	- beginning at [Header+48]
+	- [Header+40] entries
+"Categories" table
+	- Unicode zero terminated strings, one directly after another
+	- beginning at [Header+44]+[Header+48]
+	- ending at [Header+64]
+"Sounds" index
+	- list of 4-Byte integers, every entry: lower 4 bits are variation number, the rest (28 bits) are the sound ID.
+	- beginning at [Header+64]
+	- [Header+56] entries
+"Category index" index
+	- list of 4-Byte integers, every entry: absolute offset of the "Categories" table entry into which the sound does classify
+	- beginning at [Header+64]+4*[Header+56]
+	- [Header+56] entries
+"Waves" index
+	- entry format:
+		0	4	Absolute offset of the phrase for the sound (in the "Phrases" section) (0=does not have a phrase)
+		4	4	Absolute offset of the WAVE file containing the sound (in the "Sound data" section) (0=does not have a sound)
+	- beginning at [Header+64]+8*[Header+56]
+	- [Header+56]*[Header+52] entries
+"Phrases" section
+	- Unicode zero terminated strings, one directly after another
+	- beginning at [Header+72]
+	- [Header+68] entries
+"Sound data" section
+	- RIFF WAVE files, copied one after another so that each has absolute offset divisible by 4
+	- beginning at [Header+84]
+	- [Header+76] entries
